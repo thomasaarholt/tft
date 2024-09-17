@@ -88,6 +88,20 @@ class Champion(ChampionTraits, Enum):
     def __hash__(self):
         return hash(self.name)
 
+    def __gt__(self, other: object):
+        if not isinstance(other, Champion):
+            return NotImplemented
+        if self.cost == other.cost:
+            return self.name > other.name
+        return self.cost > other.cost
+
+    # def __lt__(self, other: object):
+    #     if not isinstance(other, Champion):
+    #         return NotImplemented
+    #     if self.cost == other.cost:
+    #         return self.name < other.name
+    #     return self.cost < other.cost
+
 
 ChampionName: TypeAlias = Literal[
     "Ahri",

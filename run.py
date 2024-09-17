@@ -1,5 +1,20 @@
 from tft.team import Team
+from tqdm.auto import tqdm
+
+
+def main():
+    level = 6
+    team = Team.from_names(
+        champions=[],
+        emblems=[],
+    )
+    i = 0
+    for solution in team.find_champs(level=level):
+        i += 1
+        tqdm.write(
+            f"{i}: {[(champ.name, champ.cost) for champ in sorted(solution.missing_champions)]} {solution.traits}"
+        )
+
 
 if __name__ == "__main__":
-    team = Team.from_names([])
-    team.find_champs()  # finds 102
+    main()
