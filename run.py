@@ -5,8 +5,14 @@ from tqdm.auto import tqdm
 def main():
     level = 6
     team = Team.from_names(
-        champions=[],
-        emblems=[],
+        champions=[
+            # "Ahri",
+            # "Zoe"
+        ],
+        emblems=[
+            # "Portal",
+            # "Bastion"
+        ],
     )
     i = 0
     for solution in team.find_champs(level=level):
