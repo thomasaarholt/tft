@@ -1,14 +1,21 @@
 import asyncio
+from collections.abc import AsyncGenerator, Generator
 import math
 from collections import Counter
 from dataclasses import dataclass, field
 from itertools import combinations
 
-from tqdm.auto import tqdm
+from tqdm.asyncio import tqdm
 
 from tft.champions import Champion, ChampionName
 from tft.solutions import Solution
 from tft.traits import ActiveTrait, Trait, TraitName
+
+
+# def foo(use_foo: bool):
+#     func = tqdm if use_foo else dummy_tqdm
+#     champs = [Champion.Ahri]
+#     for i in  func(champs)
 
 
 @dataclass
@@ -43,73 +50,60 @@ class Team:
     def non_unique_traits(self):
         return [trait for trait in self.active_traits() if trait.level != 1]
 
-    def find_champs(self, level: int = 7):
-        """Find champions that will satisfy Trait Tracker at a given player level."""
+    def _generate_combinations(
+        self, level: int, is_async: bool
+    ) -> Generator[tuple[Champion, ...], None, None]:
+        """Helper function to generate combinations of champions."""
         number_champs_to_pick = level - len(self.champions)
         remaining_champs = set(Champion) - set(self.champions)
         n_combinations = math.comb(len(remaining_champs), number_champs_to_pick)
-        for champ_combination in tqdm(
-            combinations(remaining_champs, number_champs_to_pick),
-            desc="Finding solutions:",
-            total=n_combinations,
-        ):
-            new_team = Team(
-                self.champions + list(champ_combination), emblems=self.emblems
+        generator = combinations(remaining_champs, number_champs_to_pick)
+        generator = (
+            tqdm(
+                generator,
+                desc="Finding solutions:",
+                total=n_combinations,
             )
-            non_unique_active_traits = new_team.non_unique_traits()
+            if not is_async
+            else generator
+        )
+        for champ_combination in generator:
+            yield champ_combination
 
-            if len(non_unique_active_traits) >= 7:
-                missing_champs = set(new_team.champions) - set(self.champions)
-                yield Solution(
-                    set(new_team.champions),
-                    missing_champs,
-                    non_unique_active_traits,
-                )
+    def _evaluate_combination(
+        self, champ_combination: tuple[Champion, ...]
+    ) -> Solution | None:
+        """Helper function to evaluate a champion combination and return a Solution if valid."""
+        new_team = Team(self.champions + list(champ_combination), emblems=self.emblems)
+        non_unique_active_traits = new_team.non_unique_traits()
 
-    async def async_find_champs(self, level: int = 7):
+        if len(non_unique_active_traits) >= 7:
+            # We remove Wukong because for the purpose of trait tracker, he is useless
+            missing_champs = (
+                set(new_team.champions) - set(self.champions) - set([Champion.Wukong])
+            )
+            return Solution(
+                set(new_team.champions),
+                missing_champs,
+                non_unique_active_traits,
+            )
+        return None
+
+    def find_champs(self, level: int = 7) -> Generator[Solution, None, None]:
         """Find champions that will satisfy Trait Tracker at a given player level."""
-        number_champs_to_pick = level - len(self.champions)
-        remaining_champs = set(Champion) - set(self.champions)
-        print("RUNNING FIND CHAMPS ASYNC")
-        n_iterations = 0
+        for champ_combination in self._generate_combinations(level, False):
+            solution = self._evaluate_combination(champ_combination)
+            if solution:
+                yield solution
+
+    async def async_find_champs(self, level: int = 7) -> AsyncGenerator[Solution, None]:
+        """Asynchronous version of find_champs."""
+
         try:
-            for champ_combination in combinations(
-                remaining_champs, number_champs_to_pick
-            ):
-                # if n_iterations % 100 == 0:
-                await asyncio.sleep(0)
-                n_iterations += 1
-
-                new_team = Team(
-                    self.champions + list(champ_combination), emblems=self.emblems
-                )
-                non_unique_active_traits = new_team.non_unique_traits()
-
-                if len(non_unique_active_traits) >= 7:
-                    missing_champs = set(new_team.champions) - set(self.champions)
-                    yield Solution(
-                        set(new_team.champions),
-                        missing_champs,
-                        non_unique_active_traits,
-                    )
+            for champ_combination in self._generate_combinations(level, True):
+                await asyncio.sleep(0)  # Yield control to the event loop
+                if solution := self._evaluate_combination(champ_combination):
+                    yield solution
         except asyncio.CancelledError:
             print("find_champs generator was cancelled.")
-            # Perform any necessary cleanup here
-            raise  # Re-raise the exception to allow proper cancellation flow
-
-    async def test_async(self, level: int = 7):
-        """Find champions that will satisfy Trait Tracker at a given player level."""
-        print("RUNNING ASYNC TEST")
-        try:
-            for _ in range(5):
-                await asyncio.sleep(2)
-
-                yield Solution(
-                    {Champion.Ahri, Champion.Seraphine},
-                    {Champion.Fiora},
-                    [ActiveTrait(Trait.Arcana, 2)],
-                )
-        except asyncio.CancelledError:
-            print("find_champs generator was cancelled.")
-            # Perform any necessary cleanup here
-            raise  # Re-raise the exception to allow proper cancellation flow
+            raise  # Re-raise to allow proper cancellation flow

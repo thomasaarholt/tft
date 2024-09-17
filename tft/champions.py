@@ -75,10 +75,10 @@ class Champion(ChampionTraits, Enum):
     Zoe = {Trait.Portal, Trait.Witchcraft, Trait.Scholar}, 1
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.cost}-{self.name}"
 
     def __repr__(self):
-        return f"{self.name}: {", ".join([t.capitalize() for t in self.traits])}"
+        return str(self)
 
     def __eq__(self, other: object):
         if not isinstance(other, Champion):
