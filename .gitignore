@@ -2,3 +2,8 @@
 __pycache__/
 tft.egg-info/
 **/*.pyc
+
+
+# Added by cargo
+
+/target
