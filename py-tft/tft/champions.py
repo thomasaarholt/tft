@@ -60,7 +60,7 @@ class Champion(ChampionTraits, Enum):
     Soraka = {Trait.Sugarcraft, Trait.Mage}, 1
     Swain = {Trait.Frost, Trait.Shapeshifter}, 3
     Syndra = {Trait.Eldritch, Trait.Incantor}, 2
-    Tahm_kench = {Trait.Arcana, Trait.Vanguard}, 4
+    TahmKench = {Trait.Arcana, Trait.Vanguard}, 4
     Taric = {Trait.Portal, Trait.Bastion}, 4
     Tristana = {Trait.Faerie, Trait.Blaster}, 2
     Twitch = {Trait.Frost, Trait.Hunter}, 1
@@ -151,7 +151,7 @@ ChampionName: TypeAlias = Literal[
     "Soraka",
     "Swain",
     "Syndra",
-    "Tahm_kench",
+    "TahmKench",
     "Taric",
     "Tristana",
     "Twitch",
