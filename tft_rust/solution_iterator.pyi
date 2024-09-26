@@ -1,0 +1,9 @@
+from typing import Iterator
+from .team import Team
+from .solution import Solution
+
+class SolutionIterator:
+    def __init__(self, team: Team, level: int) -> None: ...
+    def __iter__(self) -> 'SolutionIterator': ...
+    def __next__(self) -> Solution: ...
+
