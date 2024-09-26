@@ -1,5 +1,9 @@
+use std::fmt;
+
+use pyo3::prelude::*;
 use strum::EnumString;
 
+#[pyclass(eq, eq_int)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumString)]
 pub enum Trait {
     Ascendant,
@@ -29,6 +33,11 @@ pub enum Trait {
     Ravenous,
     Sugarcraft,
     Witchcraft,
+}
+impl fmt::Display for Trait {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl Trait {
@@ -64,6 +73,7 @@ impl Trait {
         }
     }
 }
+#[pyclass]
 #[derive(Debug, Clone, Copy)]
 pub struct ActiveTrait {
     pub trait_: Trait,

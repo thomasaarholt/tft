@@ -8,14 +8,11 @@ from itertools import combinations
 from tqdm.asyncio import tqdm
 
 from tft.champions import Champion, ChampionName
-from tft.solutions import Solution
+from tft.solution import Solution
 from tft.traits import ActiveTrait, Trait, TraitName
 
+from tft_rust import (Team as RustTeam, Solution as RustSolution)
 
-# def foo(use_foo: bool):
-#     func = tqdm if use_foo else dummy_tqdm
-#     champs = [Champion.Ahri]
-#     for i in  func(champs)
 
 
 @dataclass
@@ -104,6 +101,18 @@ class Team:
                 await asyncio.sleep(0)  # Yield control to the event loop
                 if solution := self._evaluate_combination(champ_combination):
                     yield solution
+        except asyncio.CancelledError:
+            print("find_champs generator was cancelled.")
+            raise  # Re-raise to allow proper cancellation flow
+
+    async def async_find_champs_rust(self, level: int = 7) -> AsyncGenerator[RustSolution, None]:
+        """Asynchronous version of find_champs."""
+        team = RustTeam(names = [str(champ) for champ in self.champions])
+
+        try:
+            for solution in team.find_solutions_py(level):
+                yield solution
+            await asyncio.sleep(0)  # Yield control to the event loop
         except asyncio.CancelledError:
             print("find_champs generator was cancelled.")
             raise  # Re-raise to allow proper cancellation flow

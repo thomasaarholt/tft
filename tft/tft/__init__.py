@@ -1,7 +1,7 @@
 from tft.team import Team
 from tft.traits import Trait, ActiveTrait
 from tft.champions import Champion, ChampionName, champion_names
-from tft.solutions import Solution
+from tft.solution import Solution
 
 __all__ = [
     "Team",

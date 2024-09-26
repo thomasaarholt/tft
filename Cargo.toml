@@ -1,10 +1,15 @@
 [package]
-name = "tft"
+name = "tft_rust"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "tft_rust"
+crate-type = ["cdylib"]
+
+
 [dependencies]
 itertools = "0.13.0"
-pyo3 = "0.22.3"
+pyo3 = { version = "0.22.3", features = ["extension-module"] }
 rayon = "1.10.0"
 strum = { version = "0.26.3", features = ["derive", "strum_macros"] }

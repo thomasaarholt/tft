@@ -1,3 +1,6 @@
+use pyo3::prelude::*;
+use std::{cmp::Ordering, fmt};
+
 use strum::{EnumIter, EnumString};
 
 use crate::traits::Trait;
@@ -8,6 +11,7 @@ pub struct Info {
     pub cost: u8,
 }
 
+#[pyclass(eq, eq_int)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, EnumString)]
 pub enum Champion {
     Ahri,
@@ -316,5 +320,26 @@ impl Champion {
                 cost: 1,
             },
         }
+    }
+}
+
+impl fmt::Display for Champion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{:?}", self.info().cost, self)
+    }
+}
+
+impl Ord for Champion {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.info().cost.cmp(&other.info().cost) {
+            Ordering::Equal => format!("{:?}", self).cmp(&format!("{:?}", other)),
+            other => other,
+        }
+    }
+}
+
+impl PartialOrd for Champion {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
