@@ -1,16 +1,17 @@
 use pyo3::prelude::*;
 use std::{collections::HashSet, fmt};
 
-use crate::{champions::Champion, traits::Trait};
+use crate::{champions::Champion, traits::ActiveTrait};
 
-#[pyclass]
+#[pyclass(get_all, name = "SolutionRust")]
 #[derive(Clone)]
 pub struct Solution {
     pub champions: HashSet<Champion>,
     pub missing_champions: HashSet<Champion>,
-    pub traits: Vec<Trait>,
+    pub traits: Vec<ActiveTrait>,
 }
 
+#[pymethods]
 impl Solution {
     pub fn cost(&self) -> u8 {
         self.champions.iter().map(|champ| champ.info().cost).sum()
@@ -20,26 +21,6 @@ impl Solution {
             .iter()
             .map(|champ| champ.info().cost)
             .sum()
-    }
-}
-#[pymethods]
-impl Solution {
-    #[getter]
-    fn champions(&self) -> Vec<String> {
-        self.champions.iter().map(|c| c.to_string()).collect()
-    }
-
-    #[getter]
-    fn missing_champions(&self) -> Vec<String> {
-        self.missing_champions
-            .iter()
-            .map(|c| c.to_string())
-            .collect()
-    }
-
-    #[getter]
-    fn traits(&self) -> Vec<String> {
-        self.traits.iter().map(|t| t.to_string()).collect()
     }
 
     // Add the __str__ and __repr__ methods

@@ -72,7 +72,7 @@ origins_data: dict[Trait, list[int]] = {
 levels = classes_data | origins_data
 
 
-@dataclass
+@dataclass(frozen=True)
 class ActiveTrait:
     trait: Trait
     level: int
@@ -86,6 +86,9 @@ class ActiveTrait:
 
     def __repr__(self):
         return f"{self.trait.name.capitalize()}: {self.level}"
+
+    # def __hash__(self):
+    #     return
 
 
 def get_nearest_lower_level(levels: list[int], count: int):

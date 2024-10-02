@@ -1,17 +1,14 @@
 import asyncio
 from collections.abc import AsyncGenerator, Generator
-import math
 from collections import Counter
 from dataclasses import dataclass, field
 from itertools import combinations
-
-from tqdm.asyncio import tqdm
 
 from tft.champions import Champion, ChampionName
 from tft.solution import Solution
 from tft.traits import ActiveTrait, Trait, TraitName
 
-from tft_rust import (Team as RustTeam, Solution as RustSolution)
+from tft_rust import SolutionIteratorRust, TeamRust
 
 
 
@@ -45,7 +42,7 @@ class Team:
         return active
 
     def non_unique_traits(self):
-        return [trait for trait in self.active_traits() if trait.level != 1]
+        return {trait for trait in self.active_traits() if trait.level != 1}
 
     def _generate_combinations(
         self, level: int, is_async: bool
@@ -53,17 +50,7 @@ class Team:
         """Helper function to generate combinations of champions."""
         number_champs_to_pick = level - len(self.champions)
         remaining_champs = set(Champion) - set(self.champions)
-        n_combinations = math.comb(len(remaining_champs), number_champs_to_pick)
         generator = combinations(remaining_champs, number_champs_to_pick)
-        generator = (
-            tqdm(
-                generator,
-                desc="Finding solutions:",
-                total=n_combinations,
-            )
-            if not is_async
-            else generator
-        )
         for champ_combination in generator:
             yield champ_combination
 
@@ -105,14 +92,26 @@ class Team:
             print("find_champs generator was cancelled.")
             raise  # Re-raise to allow proper cancellation flow
 
-    async def async_find_champs_rust(self, level: int = 7) -> AsyncGenerator[RustSolution, None]:
+    def find_champs_rust(self, level: int = 7) -> SolutionIteratorRust:
         """Asynchronous version of find_champs."""
-        team = RustTeam(names = [str(champ) for champ in self.champions])
+        names = [champ.name for champ in self.champions]
+        team = TeamRust.from_names_py(names = names)
+        return team.find_solutions_py(level)
+        # try:
+        #     for solution in team.find_solutions_py(level):
+        #         yield solution
+        #     await asyncio.sleep(0)  # Yield control to the event loop
+        # except asyncio.CancelledError:
+        #     print("find_champs generator was cancelled.")
+        #     raise  # Re-raise to allow proper cancellation flow
+    # async def async_find_champs_rust(self, level: int = 7) -> AsyncGenerator[RustSolution, None]:
+    #     """Asynchronous version of find_champs."""
+    #     team = RustTeam(names = [str(champ) for champ in self.champions])
 
-        try:
-            for solution in team.find_solutions_py(level):
-                yield solution
-            await asyncio.sleep(0)  # Yield control to the event loop
-        except asyncio.CancelledError:
-            print("find_champs generator was cancelled.")
-            raise  # Re-raise to allow proper cancellation flow
+    #     try:
+    #         for solution in team.find_solutions_py(level):
+    #             yield solution
+    #         await asyncio.sleep(0)  # Yield control to the event loop
+    #     except asyncio.CancelledError:
+    #         print("find_champs generator was cancelled.")
+    #         raise  # Re-raise to allow proper cancellation flow

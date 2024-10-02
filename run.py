@@ -1,13 +1,15 @@
 from tft.team import Team
-from tqdm.auto import tqdm
-
 
 if __name__ == "__main__":
-    level = 7
+    level = 8
     team = Team.from_names(
-        champions=["Ahri", "Rumble", "Rakan"],
+        champions=["Kalista", "Jax", "Kassadin", "Bard" , "Rumble", "TahmKench"],
         # emblems=["Portal", "Bastion"],
     )
-    for i, solution in enumerate(team.find_champs(level=level)):
-        champs = sorted(solution.missing_champions)
-        tqdm.write(f"{i}: {champs} {solution.traits}")
+    print("Rust:")
+    for solution in team.find_champs_rust(level=level):
+        print(solution)
+
+    # print("\n\nPython:")
+    # for solution in team.find_champs(level=level):
+    #     print(solution)

@@ -1,65 +1,44 @@
-use std::collections::HashSet;
-
 use pyo3::prelude::*;
-use rayon::prelude::*;
 
-use crate::{champions::Champion, solution::Solution, team::Team};
+use crate::{solution::Solution, team::Team};
+use crossbeam_channel::{unbounded, Receiver};
 
-#[pyclass]
+#[pyclass(name = "SolutionIteratorRust")]
 pub struct SolutionIterator {
-    team: Team,
-    combinations: Vec<HashSet<Champion>>,
-    index: usize,
-    buffer: Vec<Solution>,
+    receiver: Receiver<Option<Solution>>,
 }
 
 #[pymethods]
 impl SolutionIterator {
     #[new]
     pub fn new(team: Team, level: u8) -> Self {
-        let combinations = team.generate_combinations(level);
-        SolutionIterator {
-            team,
-            combinations,
-            index: 0,
-            buffer: Vec::new(),
-        }
+        let (sender, receiver) = unbounded();
+
+        std::thread::spawn(move || {
+            for combination in team.generate_combinations(level) {
+                if let Some(solution) = team.evaluate_combination(&combination) {
+                    if sender.send(Some(solution)).is_err() {
+                        break; // The receiver has been dropped
+                    }
+                }
+            }
+            let _ = sender.send(None); // Signal completion
+        });
+
+        SolutionIterator { receiver }
     }
 
     fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
         slf
     }
 
-    fn __next__(mut slf: PyRefMut<Self>, py: Python) -> PyResult<Option<Py<Solution>>> {
-        loop {
-            if let Some(solution) = slf.buffer.pop() {
-                let py_solution = Py::new(py, solution)?;
-                return Ok(Some(py_solution));
+    fn __next__(slf: PyRefMut<Self>) -> PyResult<Option<Py<Solution>>> {
+        match slf.receiver.recv() {
+            Ok(Some(solution)) => {
+                let py_solution = Python::with_gil(|py| Py::new(py, solution))?;
+                Ok(Some(py_solution))
             }
-            if slf.index >= slf.combinations.len() {
-                return Ok(None);
-            }
-
-            // Calculate the range for the batch
-            let end = (slf.index + 1000).min(slf.combinations.len());
-            let start = slf.index;
-
-            // Update slf.index before borrowing slf.combinations
-            slf.index = end;
-
-            // Now borrow slf.combinations
-            let batch = &slf.combinations[start..end];
-
-            let team_clone = slf.team.clone();
-
-            let mut solutions: Vec<Solution> = batch
-                .par_iter()
-                .filter_map(|combination| team_clone.evaluate_combination(combination))
-                .collect();
-
-            solutions.reverse(); // Reverse to pop from the end
-
-            slf.buffer = solutions;
+            Ok(None) | Err(_) => Ok(None), // No more data or the sender has been dropped
         }
     }
 }

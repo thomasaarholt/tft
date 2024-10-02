@@ -1,5 +1,9 @@
+use itertools::Format;
 use pyo3::prelude::*;
-use std::{cmp::Ordering, fmt};
+use std::{
+    cmp::Ordering,
+    fmt::{self, format},
+};
 
 use strum::{EnumIter, EnumString};
 
@@ -11,7 +15,7 @@ pub struct Info {
     pub cost: u8,
 }
 
-#[pyclass(eq, eq_int)]
+#[pyclass(name = "ChampionRust", eq, eq_int, frozen, hash)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, EnumString)]
 pub enum Champion {
     Ahri,
@@ -341,5 +345,13 @@ impl Ord for Champion {
 impl PartialOrd for Champion {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+#[pymethods]
+impl Champion {
+    #[getter]
+    fn name(&self) -> PyResult<String> {
+        Ok(format!("{:?}", self))
     }
 }

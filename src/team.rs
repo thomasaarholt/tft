@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyType;
 use rayon::prelude::*;
 use std::{
     collections::{HashMap, HashSet},
@@ -15,7 +16,7 @@ use crate::{
     traits::{ActiveTrait, Trait},
 };
 
-#[pyclass]
+#[pyclass(name = "TeamRust", get_all, frozen)]
 #[derive(Clone)]
 pub struct Team {
     pub champions: Vec<Champion>,
@@ -24,13 +25,19 @@ pub struct Team {
 #[pymethods]
 impl Team {
     #[new]
-    pub fn new(names: Vec<String>) -> Team {
+    pub fn new(champions: Vec<Champion>) -> Team {
+        Team { champions }
+    }
+
+    #[classmethod]
+    pub fn from_names_py(cls: &Bound<'_, PyType>, names: Vec<String>) -> Team {
         let champions = names
             .iter()
-            .map(|name| Champion::from_str(name).expect("Invalid Champion name"))
+            .map(|name| Champion::from_str(name).expect("That wasn't an acceptable Champion name"))
             .collect();
         Team { champions }
     }
+
     pub fn find_solutions_py(&self, level: u8) -> SolutionIterator {
         SolutionIterator::new(self.clone(), level)
     }
@@ -118,7 +125,7 @@ impl Team {
             Some(Solution {
                 champions,
                 missing_champions,
-                traits: new_team.traits(),
+                traits: new_team.active_traits(),
             })
         } else {
             None

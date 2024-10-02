@@ -1,9 +1,0 @@
-from typing import List
-from .traits import Trait
-from .solution_iterator import SolutionIterator
-
-class Team:
-    def __init__(self, names: List[str]) -> None: ...
-    def find_solutions_py(self, level: int) -> SolutionIterator: ...
-    def traits(self) -> List[Trait]: ...
-

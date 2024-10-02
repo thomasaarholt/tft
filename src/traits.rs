@@ -3,7 +3,7 @@ use std::fmt;
 use pyo3::prelude::*;
 use strum::EnumString;
 
-#[pyclass(eq, eq_int)]
+#[pyclass(name = "TraitRust", get_all, eq, eq_int)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumString)]
 pub enum Trait {
     Ascendant,
@@ -73,8 +73,16 @@ impl Trait {
         }
     }
 }
-#[pyclass]
-#[derive(Debug, Clone, Copy)]
+#[pymethods]
+impl Trait {
+    #[getter]
+    fn name(&self) -> PyResult<String> {
+        Ok(format!("{}", self))
+    }
+}
+
+#[pyclass(name = "ActiveTraitRust", get_all)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct ActiveTrait {
     pub trait_: Trait,
     pub level: u8,
