@@ -6,10 +6,10 @@ from itertools import combinations
 
 from tft.champions import Champion, ChampionName
 from tft.solution import Solution
+from tft.solution_iterator import AsyncSolutionIterator
 from tft.traits import ActiveTrait, Trait, TraitName
 
-from tft_rust import SolutionIteratorRust, TeamRust
-
+from tft_rust import TeamRust
 
 
 @dataclass
@@ -92,26 +92,8 @@ class Team:
             print("find_champs generator was cancelled.")
             raise  # Re-raise to allow proper cancellation flow
 
-    def find_champs_rust(self, level: int = 7) -> SolutionIteratorRust:
+    def find_champs_rust(self, level: int = 7) -> AsyncSolutionIterator:
         """Asynchronous version of find_champs."""
         names = [champ.name for champ in self.champions]
-        team = TeamRust.from_names_py(names = names)
-        return team.find_solutions_py(level)
-        # try:
-        #     for solution in team.find_solutions_py(level):
-        #         yield solution
-        #     await asyncio.sleep(0)  # Yield control to the event loop
-        # except asyncio.CancelledError:
-        #     print("find_champs generator was cancelled.")
-        #     raise  # Re-raise to allow proper cancellation flow
-    # async def async_find_champs_rust(self, level: int = 7) -> AsyncGenerator[RustSolution, None]:
-    #     """Asynchronous version of find_champs."""
-    #     team = RustTeam(names = [str(champ) for champ in self.champions])
-
-    #     try:
-    #         for solution in team.find_solutions_py(level):
-    #             yield solution
-    #         await asyncio.sleep(0)  # Yield control to the event loop
-    #     except asyncio.CancelledError:
-    #         print("find_champs generator was cancelled.")
-    #         raise  # Re-raise to allow proper cancellation flow
+        team = TeamRust.from_names_py(names=names)
+        return AsyncSolutionIterator(team.find_solutions_py(level))
